@@ -1,9 +1,9 @@
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <unistd.h>
-#include <errno.h>
-#include <string.h>
+#include <cerrno>
+#include <cstring>
 
 #include "disk.h"
 

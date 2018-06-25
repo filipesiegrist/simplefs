@@ -15,6 +15,7 @@
  *
  */
 
+
 /*
  * Varre um sistema de arquivo montado e reporta como os inodos e os blocos est~ao organizados. Se
  * voc^e conseguir escrever esta func~ao, voc^e ja ganhou metade da batalha! Assim que voc^e conseguir varrer
@@ -34,12 +35,15 @@ void fs_debug();
 int  fs_format();
 
 /*
- * Examina o disco para um sistema de arquivo. Se um esta presente, lê o superbloco, constroi um
+ * Examina o disco para um sistema de arquivo. Se um esta presente, l^e o superbloco, constroi um
  * bitmap de blocos livres, e prepara o sistema de arquivo para uso. Retorna um em caso de sucesso, zero
  * caso contrario. Note que uma montagem bem-sucedida e um pre-requisito para as outras chamadas.
  * 
  */
 int  fs_mount();
+
+
+
 
 /*
  * Cria um novo inodo de comprimento zero. Em caso de sucesso, retorna o inumero (positivo). Em
@@ -61,7 +65,9 @@ int  fs_delete( int inumber );
  * valido para um inodo! Em caso de falha, retorna -1.
  * 
  */
-int  fs_getsize();
+int  fs_getsize( int inumber );
+
+
 
 /*
  * L^e dado de um inodo valido. Copia \length" bytes do inodo para dentro do ponteiro \data",
@@ -81,6 +87,5 @@ int  fs_read( int inumber, char *data, int length, int offset );
  * 
  */
 int  fs_write( int inumber, const char *data, int length, int offset );
-
 
 #endif

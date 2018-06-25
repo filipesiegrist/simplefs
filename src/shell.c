@@ -2,10 +2,10 @@
 #include "fs.h"
 #include "disk.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cerrno>
+#include <cstring>
 
 static int do_copyin( const char *filename, int inumber );
 static int do_copyout( int inumber, const char *filename );
