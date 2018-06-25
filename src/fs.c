@@ -45,7 +45,7 @@ void inode_load( int inumber, struct fs_inode *inode_ler ) {
 	/* bloco de leitura */
 	union fs_block leitura;
 	
-	/* A FAZER ABAIXO: Verificar se inode varia de 0-127 ou de 1-128. Se for a primeira tem que mudar o numero de bloco e posicao */
+	/* A FAZER ABAIXO: Verificar se inumber varia de 0-127 ou de 1-128. Se for a primeira tem que mudar o numero de bloco e posicao */
 	
 	/* \/\/ */
 	
@@ -66,7 +66,7 @@ void inode_save( int inumber, struct fs_inode &inode_esc ) {
 	/* bloco de escrita */
 	union fs_block escrita;
 	
-	/* A FAZER ABAIXO: Verificar se inode varia de 0-127 ou de 1-128. Se for a primeira tem que mudar o numero de bloco e posicao */
+	/* A FAZER ABAIXO: Verificar se inumber varia de 0-127 ou de 1-128. Se for a primeira tem que mudar o numero de bloco e posicao */
 	
 	/* \/\/ */
 	
