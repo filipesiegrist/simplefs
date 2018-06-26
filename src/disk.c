@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <cerrno>
 #include <cstring>
-
+//iuaiaiahkjhs 
 #include "disk.h"
 
 #define DISK_MAGIC 0xdeadbeef
@@ -89,4 +89,3 @@ void disk_close()
 		diskfile = 0;
 	}
 }
-
