@@ -173,7 +173,7 @@ void fs_debug()
 					int num_ponteiros = 0;
 					/* Agora trata bloco_indirecao como campo de ponteiros e conta os ponteiros diferentes de zero */
 					for (k = 0; k < POINTERS_PER_BLOCK; k++) {
-						/* Sera ponteiro valido se for diferente de zero */
+						/* Sera ponteiro valido se for maior que zero */
 						if (bloco_indirecao.pointers[k] > 0) num_ponteiros++;
 					}
 					
@@ -185,8 +185,8 @@ void fs_debug()
 						cout << "\tindirect data blocks:";
 						/* Exibe agora os numeros diferentes de zero */
 						for (k = 0; k < POINTERS_PER_BLOCK; k++) {
-							/* Sera ponteiro valido se for diferente de zero */
-							if (bloco_indirecao.pointers[k] != 0) cout << " " << bloco_indirecao.pointers[k];
+							/* Sera ponteiro valido se for maior que zero */
+							if (bloco_indirecao.pointers[k] > 0) cout << " " << bloco_indirecao.pointers[k];
 						}
 						cout << endl;
 					}
