@@ -17,6 +17,8 @@ using namespace std;
 #define POINTERS_PER_INODE 5
 #define POINTERS_PER_BLOCK 1024
 
+
+
 struct fs_superblock {
 	int magic;
 	int nblocks;
@@ -126,10 +128,15 @@ void fs_debug()
 	/* le a parte zero que e o superbloco */
 	disk_read(0,block.data);
 
-	printf("superblock:\n");
-	printf("    %d blocks\n",block.super.nblocks);
-	printf("    %d inode blocks\n",block.super.ninodeblocks);
-	printf("    %d inodes\n",block.super.ninodes);
+	if (_mounted)
+	{
+		cout<<endl<<"FS mounted"<<endl;
+	}else cout<<endl<<"FS not mounted"<<endl;
+
+	cout<<"superblock:"<<endl;
+	cout<<"    "<<block.super.nblocks<<" blocks"<<endl;
+	cout<<"    "<<block.super.ninodeblocks<<" inode blocks"<<endl;;
+	cout<<"    "<<block.super.ninodes<<" inodes"<<endl;;
 	
 	
 	/* Aloca os espacos dos blocos para o vetor de blocos de inodes */
@@ -211,7 +218,23 @@ void fs_debug()
  */
 int fs_mount()
 {
-	return 0;
+
+	/*Lê o primeiro bloco:*/
+	fs_block block;
+ 	disk_read(0, block.data);
+
+
+	/*Verifica se já está montado ou se o disco é o correto*/
+	if (_mounted || block.super.magic != FS_MAGIC ) 
+	{
+		return 0;
+	}
+
+	/*implementar a mount aqui*/
+
+	
+	_mounted=true;
+	return 1;
 }
 
 int fs_create()
