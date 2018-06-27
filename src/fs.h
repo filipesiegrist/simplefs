@@ -42,9 +42,6 @@ int  fs_format();
  */
 int  fs_mount();
 
-
-
-
 /*
  * Cria um novo inodo de comprimento zero. Em caso de sucesso, retorna o inumero (positivo). Em
  * caso de falha, retorna zero. (Note que isto implica que zero n~ao pode ser um inumero valido.)
@@ -67,8 +64,6 @@ int  fs_delete( int inumber );
  */
 int  fs_getsize( int inumber );
 
-
-
 /*
  * L^e dado de um inodo valido. Copia \length" bytes do inodo para dentro do ponteiro \data",
  * comecando em \oset" no inodo. Retorna o numero total de bytes lidos. O Numero de bytes efetivamente
@@ -88,7 +83,7 @@ int  fs_read( int inumber, char *data, int length, int offset );
  */
 int  fs_write( int inumber, const char *data, int length, int offset );
 
-volatile bool _mounted;
+
 
 
 

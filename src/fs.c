@@ -1,22 +1,23 @@
 
 #include "fs.h"
 #include "disk.h"
-
+//
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
 #include <cerrno>
 #include <unistd.h>
 
-/* editado por mim */
+/* editado */
 #include <iostream>
+#include <vector>
 using namespace std;
+
 
 #define FS_MAGIC           0xf0f03410
 #define INODES_PER_BLOCK   128
 #define POINTERS_PER_INODE 5
 #define POINTERS_PER_BLOCK 1024
-
 
 
 struct fs_superblock {
@@ -40,54 +41,61 @@ union fs_block {
 	char data[DISK_BLOCK_SIZE];
 };
 
+//variável que assinala se o sistema está ou não mantado:
+volatile bool _mounted;
+//mapa de bits do disco:
+vector<bool> bitmap;
+//mapa dos inodos:
+//vector<int> inodemap;
+
 /* carrega o seguinte inode da memoria */
 void inode_load( int inumber, struct fs_inode *inode_ler ) {
 	/* inode alocado */
 	inode_ler = new struct fs_inode;
 	/* bloco de leitura */
 	union fs_block leitura;
-	
+
 	/* A FAZER ABAIXO: Verificar se inumber varia de 0-127 ou de 1-128. Se for a primeira tem que mudar o numero de bloco e posicao */
-	
+
 	/* \/\/ */
-	
+
 	/* Acha o bloco em que o inode se encontra. Soma 1 pra tirar o superbloco */
 	int numbloco = inumber/INODES_PER_BLOCK + 1;
 	/* Acha a posicao no bloco */
 	int posicao = inumber%INODES_PER_BLOCK;
-	
+
 	/* /\/\ */
-	
+
 	/* efetua a leitura do bloco */
 	disk_read(numbloco,leitura.data);
 	/* aponta inode_ler para a posicao no bloco  */
 	inode_ler = leitura.inode+posicao;
-	
+
 }
 void inode_save( int inumber, struct fs_inode &inode_esc ) {
 	/* bloco de escrita */
 	union fs_block escrita;
-	
+
 	/* A FAZER ABAIXO: Verificar se inumber varia de 0-127 ou de 1-128. Se for a primeira tem que mudar o numero de bloco e posicao */
-	
+
 	/* \/\/ */
-	
+
 	/* Acha o bloco em que o inode se encontra. Soma 1 pra tirar o superbloco */
 	int numbloco = inumber/INODES_PER_BLOCK + 1;
 	/* Acha a posicao no bloco */
 	int posicao = inumber%INODES_PER_BLOCK;
-	
+
 	/* /\/\ */
-	
+
 	/* efetua a leitura do bloco */
 	disk_read(numbloco,escrita.data);
-	
+
 	/* atribui o valor desse inode no bloco */
 	escrita.inode[posicao] = inode_esc;
-	
+
 	/* escreve o dado na memoria */
 	disk_write(numbloco,escrita.data);
-	
+
 	/* libera o inode */
 	delete &inode_esc;
 }
@@ -97,18 +105,18 @@ void inode_save( int inumber, struct fs_inode &inode_esc ) {
  * dez por cento dos blocos para inodos, libera a tabela de inodos, e escreve o superbloco. Retorna um para
  * sucesso, zero caso contrario. Note que formatar o sistema de arquivo n~ao faz com que ele seja montado.
  * Tambem, uma tentativa de formatar um disco que ja foi montado n~ao deve fazer nada e retornar falha.
- * 
+ *
  */
 int fs_format()
 {
 	int tamanho = disk_size();
 	/* tamanho para inodos */
-	int tamanho_inodos = tamanho/10;
+	//int tamanho_inodos = tamanho/10;
 	union fs_block bloco0;
 	disk_read(0,bloco0.data);
-	int magico = bloco0.super.magic;
+	//int magico = bloco0.super.magic;
 	/* Fazer todos os i-nodes serem invalidos */
-	
+
 	return 0;
 }
 
@@ -117,7 +125,7 @@ int fs_format()
  * voc^e conseguir escrever esta func~ao, voc^e ja ganhou metade da batalha! Assim que voc^e conseguir varrer
  * e reportar as estruturas do sistema de arquivos, o resto e facil. Sua saida do fs debug deve ser similar ao
  * seguinte:
- * 
+ *
  */
 void fs_debug()
 {
@@ -128,17 +136,18 @@ void fs_debug()
 	/* le a parte zero que e o superbloco */
 	disk_read(0,block.data);
 
+	cout<<endl<<"\t--->\tDebug:"<<endl;
 	if (_mounted)
 	{
-		cout<<endl<<"FS mounted"<<endl;
+		cout<<"FS mounted"<<endl;
 	}else cout<<endl<<"FS not mounted"<<endl;
 
 	cout<<"superblock:"<<endl;
 	cout<<"    "<<block.super.nblocks<<" blocks"<<endl;
 	cout<<"    "<<block.super.ninodeblocks<<" inode blocks"<<endl;;
 	cout<<"    "<<block.super.ninodes<<" inodes"<<endl;;
-	
-	
+
+
 	/* Aloca os espacos dos blocos para o vetor de blocos de inodes */
 	block_vec = new union fs_block[block.super.ninodeblocks];
 	int i,j,k;
@@ -148,7 +157,7 @@ void fs_debug()
 		/* Coloca o valor do disco no vetor de blocos */
 		/* le a porcao i+1 pq ja foi lida a porcao 0 */
 		disk_read(i+1,block_vec[i].data);
-		
+
 		/* percorre todos os inodos do bloco */
 		for (j = 0; j < INODES_PER_BLOCK; j++) {
 			/* Verifica se o inodo e valido */
@@ -156,26 +165,26 @@ void fs_debug()
 				cout << "inode " << num_inodos_percorridos << ": " << endl;
 				/* Escreve o tamanho */
 				cout << "\tsize: " << block_vec[i].inode[j].size << " bytes" << endl;
-				
+
 				/* Escreve quais sao os blocos diretos */
-				cout << "\tdirect blocks:";
+				cout << "\tdirect blocks:"<<endl;
 				for (k = 0; k < POINTERS_PER_INODE; k++) {
 					/* Se o numero for zero não exibe. */
-					if (block_vec[i].inode[j].direct[k] != 0) cout << " " << block_vec[i].inode[j].direct[k];
+					if (block_vec[i].inode[j].direct[k] != 0) cout << "\t\t" << block_vec[i].inode[j].direct[k]<<endl;
 				}
 				cout << endl;
-				
+
 				/* Aqui comeca a parte que pega um pouco. Tenho que achar os blocos indiretos. */
 				/* Se indirect for 0 entao nao tem. Mas se nao for isso sera o numero do bloco */
 				/* com ponteiros para os outros blocos */
-				
+
 				/* Verifica se existem blocos indiretos */
 				if (block_vec[i].inode[j].indirect != 0) {
 					/* bloco de indirecao */
 					union fs_block bloco_indirecao;
 					/* Efetua a leitura */
 					disk_read(block_vec[i].inode[j].indirect,bloco_indirecao.data);
-					
+
 					/* Numero de ponteiros validos */
 					int num_ponteiros = 0;
 					/* Agora trata bloco_indirecao como campo de ponteiros e conta os ponteiros diferentes de zero */
@@ -183,57 +192,109 @@ void fs_debug()
 						/* Sera ponteiro valido se for maior que zero */
 						if (bloco_indirecao.pointers[k] > 0) num_ponteiros++;
 					}
-					
+
 					/* Mostra qual e o bloco de indirecao */
 					cout << "\tindirect block: " << block_vec[i].inode[j].indirect << endl;
-					
+
 					/* So exibe o proximo se bloco de indirecao tiver um ponteiro valido */
 					if (num_ponteiros > 0) {
-						cout << "\tindirect data blocks:";
+						cout << "\tindirect data blocks:"<<endl;
 						/* Exibe agora os numeros diferentes de zero */
 						for (k = 0; k < POINTERS_PER_BLOCK; k++) {
 							/* Sera ponteiro valido se for maior que zero */
-							if (bloco_indirecao.pointers[k] > 0) cout << " " << bloco_indirecao.pointers[k];
+							if (bloco_indirecao.pointers[k] > 0) cout << "\t\t" << bloco_indirecao.pointers[k]<<endl;
 						}
 						cout << endl;
 					}
-				}  
-				
+				}
+
 			}
 			num_inodos_percorridos++;
 			if (num_inodos_percorridos == block.super.ninodes) break;
 		}
 		if (num_inodos_percorridos == block.super.ninodes) break;
 	}
-	
+
 	delete block_vec;
-	
 }
 
 /*
  * Examina o disco para um sistema de arquivo. Se um esta presente, l^e o superbloco, constroi um
  * bitmap de blocos livres, e prepara o sistema de arquivo para uso. Retorna um em caso de sucesso, zero
  * caso contrario. Note que uma montagem bem-sucedida e um pre-requisito para as outras chamadas.
- * 
+ *
  */
 int fs_mount()
 {
 
-	/*Lê o primeiro bloco:*/
-	fs_block block;
- 	disk_read(0, block.data);
+	int i,j,k;		  //contadores
+	fs_block s_block; //superbloco
+	fs_block i_block; //bloco de inode
+	fs_block id_block;//bloco indireto
 
-
-	/*Verifica se já está montado ou se o disco é o correto*/
-	if (_mounted || block.super.magic != FS_MAGIC ) 
+	//Lê o primeiro bloco (super bloco):
+ 	disk_read(0, s_block.data);
+	//Verifica se já está montado ou se o disco não tem a identificação esperada:
+	if (_mounted || s_block.super.magic != FS_MAGIC )
 	{
+		//retorna insucesso:
 		return 0;
 	}
+	//altera o tamanho do bitmap para o número de blocos do disco:
+	bitmap.resize(s_block.super.nblocks,false);
+	//percorre o superbloco e os blocos de inode:
+	for(i=0; i<(s_block.super.ninodeblocks+1); i++)
+	{
+		//salva eles no mapa de blocos:
+		bitmap[i]=true;
+	}
+	//percorrer os blocos de inodo:
+	for(i=1; i<(s_block.super.ninodeblocks+1); i++)
+	{
+		disk_read(i, i_block.data);//le um bloco de inodo
+		//percorre o inodo atual:
+		for(int j = 0; j < INODES_PER_BLOCK; j++)
+		{
+			//adiciona uma posição no mapa de inodos;
+			//inodemap.push_back(0);
+			//se o inodo atual for válido:
+			if(i_block.inode[j].isvalid)
+			{	
+				//salva o bloco do inodo
+				//inodemap[i-1+j]=i;                 			<------ O Leal tinha me dito que criou esse mapa de inodos, não sei se é necessário, confira isso por favor!
+				//percorre os blocos diretos:
+				for(int k=0; k<POINTERS_PER_INODE; k++)
+				{
+					//se ele apontar para algum bloco válido:
+					if(i_block.inode[j].direct[k]>0 && i_block.inode[j].direct[k]<=s_block.super.nblocks) 
+					{
+						//salva a posição no mapa de blocos:
+						bitmap[i_block.inode[j].direct[k]] = true;
+					}
+				}
+				//verifica se existem blocos indiretos:
+				if(i_block.inode[j].indirect>s_block.super.ninodeblocks && i_block.inode[j].indirect<s_block.super.nblocks)
+				{
+					//lê o bloco indireto:
+					disk_read(i_block.inode[j].indirect, id_block.data);
+					for(int k=0; k<POINTERS_PER_BLOCK; k++)
+					{
+						//se o valor do bloco indireto for válido:
+						if(id_block.pointers[k]>s_block.super.ninodeblocks && id_block.pointers[k]<s_block.super.nblocks)
+						{
+							//salva a posição no mapa de blocos:
+							bitmap[id_block.pointers[k]] = true;
+						}
+					}
 
-	/*implementar a mount aqui*/
+				}
 
-	
+			}
+		}
+	}
+	//coloca o marcador de montado como verdadeiro:
 	_mounted=true;
+	//retorna sucesso:
 	return 1;
 }
 
