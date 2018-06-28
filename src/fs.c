@@ -307,11 +307,18 @@ int fs_create()
 		//retorna insucesso:
 		return 0;
 	}
-	int i,j,k;		  //contadores
-	fs_block s_block; //superbloco
-	fs_block i_block; //bloco de inodo
+	int i,j,k;		  	//contadores
+	int inode_n=0;  	//contador de inodos percorridos 
+	fs_block s_block; 	//superbloco
+	fs_block i_block; 	//bloco de inodo
 	//Lê o primeiro bloco (super bloco):
 	disk_read(0, s_block.data);
+	//Lê o primeiro bloco de inodos:
+	disk_read(1, i_block.data);
+	//Torna o inodo zero "ocupado" para que ele não seja criado devido ao problema com o código de erro:
+	i_block.inode[0].isvalid=true;
+	//Salva o bloco com o inodo zero "ocupado":
+	disk_write(1,i_block.data);
 	//percorrer os blocos de inodo:
 	for(i=1; i<(s_block.super.ninodeblocks+1); i++)
 	{
@@ -337,10 +344,12 @@ int fs_create()
 				//faz o bloco indireto para bloco inválido (esvazia):
 				i_block.inode[j].indirect=0;
 				//salva o inodo em disco:
-				disk_write(i+j,i_block.data);
+				disk_write(i,i_block.data);
 				//retorna sucesso, o número do inodo, pois encontrou um inodo vazio e o criou
-				return i+j;
-			}	
+				return inode_n;
+			}
+			//incrementa o numero de inodos percorridos
+			inode_n++;
 		}
 	}
 	//retorna insucesso pois percorreu todos os inodos de todos os blocos e não encontrou um inodo vazio e o criou
