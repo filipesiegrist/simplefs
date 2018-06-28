@@ -44,7 +44,7 @@ int  fs_mount();
 
 /*
  * Cria um novo inodo de comprimento zero. Em caso de sucesso, retorna o inumero (positivo). Em
- * caso de falha, retorna zero. (Note que isto implica que zero n~ao pode ser um inumero valido.)
+ * caso de falha, retorna zero. (Note que isto implica que zero não pode ser um inumero valido.)
  * 
  */
 int  fs_create();

@@ -28,7 +28,7 @@ struct fs_superblock {
 };
 
 struct fs_inode {
-	int isvalid;
+	bool isvalid;
 	int size;
 	int direct[POINTERS_PER_INODE];
 	int indirect;
@@ -72,7 +72,7 @@ void inode_load( int inumber, struct fs_inode *inode_ler ) {
 	inode_ler = leitura.inode+posicao;
 
 }
-void inode_save( int inumber, struct fs_inode &inode_esc ) {
+void inode_save( int inumber, struct fs_inode inode_esc ) {
 	/* bloco de escrita */
 	union fs_block escrita;
 
@@ -97,7 +97,7 @@ void inode_save( int inumber, struct fs_inode &inode_esc ) {
 	disk_write(numbloco,escrita.data);
 
 	/* libera o inode */
-	delete &inode_esc;
+	//delete &inode_esc;
 }
 
 /*
@@ -300,6 +300,50 @@ int fs_mount()
 
 int fs_create()
 {
+
+	//Verifica se está montado:
+	if (!_mounted)
+	{
+		//retorna insucesso:
+		return 0;
+	}
+	int i,j,k;		  //contadores
+	fs_block s_block; //superbloco
+	fs_block i_block; //bloco de inodo
+	//Lê o primeiro bloco (super bloco):
+	disk_read(0, s_block.data);
+	//percorrer os blocos de inodo:
+	for(i=1; i<(s_block.super.ninodeblocks+1); i++)
+	{
+		//le um bloco de inodo:
+		disk_read(i, i_block.data);
+		//percorre o inodo atual:
+		for(int j = 0; j < INODES_PER_BLOCK; j++)
+		{
+			//se o inodo atual não for válido:
+			if(!i_block.inode[j].isvalid)
+			{
+				//torna ele válido:
+				i_block.inode[j].isvalid=true;
+				i_block.inode[j].size=0;
+				//salva o bloco do inodo
+				//inodemap[i-1+j]=i;    <------ Conferir se precisa desse mapa de inodos!
+				//percorre os blocos diretos:
+				for(int k=0; k<POINTERS_PER_INODE; k++)
+				{
+					//faz ele apontar para bloco inválido (esvazia):
+					i_block.inode[j].direct[k]=0;
+				}
+				//faz o bloco indireto para bloco inválido (esvazia):
+				i_block.inode[j].indirect=0;
+				//salva o inodo em disco:
+				disk_write(i+j,i_block.data);
+				//retorna sucesso, o número do inodo, pois encontrou um inodo vazio e o criou
+				return i+j;
+			}	
+		}
+	}
+	//retorna insucesso pois percorreu todos os inodos de todos os blocos e não encontrou um inodo vazio e o criou
 	return 0;
 }
 
