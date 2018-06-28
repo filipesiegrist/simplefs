@@ -42,11 +42,28 @@ union fs_block {
 };
 
 //variável que assinala se o sistema está ou não mantado:
-volatile bool _mounted;
+volatile bool _mounted = false;
+
+/*
+ *
+ * Convenção:
+ *	false: livre
+ *	true: ocupado
+ *
+ */
+
 //mapa de bits do disco:
 vector<bool> bitmap;
-//mapa dos inodos:
-//vector<int> inodemap;
+
+/*
+ * 
+ * Mapa dos inodos:
+ * guarda a posicao da memoria pra onde esse inodo aponta.
+ * 	Se tiver 0: inodo livre
+ * 	Se for diferente: inodo valido e contem bloco onde esta inserido
+ *
+ */
+vector<int> inodemap;
 
 /* carrega o seguinte inode da memoria */
 void inode_load( int inumber, struct fs_inode *inode_ler ) {
@@ -109,15 +126,62 @@ void inode_save( int inumber, struct fs_inode inode_esc ) {
  */
 int fs_format()
 {
+	/* Verifica se está montado: */
+	if (_mounted)
+	{
+		/* retorna insucesso: */
+		return 0;
+	}
+	
+	int i,j;
+	
+	/* numero de blocos do disco */
 	int tamanho = disk_size();
-	/* tamanho para inodos */
-	//int tamanho_inodos = tamanho/10;
-	union fs_block bloco0;
-	disk_read(0,bloco0.data);
-	//int magico = bloco0.super.magic;
-	/* Fazer todos os i-nodes serem invalidos */
+	/* 
+	 * tamanho para inodos
+	 * Se tiver dez ou menos blocos entao reserva um para inodes
+	 */
+	int tamanho_inodos = (tamanho>=10)?tamanho/10:1;
+	
+	
+	
+	/* novo bloco inicial */
+	union fs_block novobloco0;
+	
+	/* setando informacoes do novo disco */
+	novobloco0.super.magic = FS_MAGIC;
+	novobloco0.super.nblocks = tamanho;
+	novobloco0.super.ninodeblocks = tamanho_inodos;
+	novobloco0.super.ninodes = 0;
+	
+	/* Fazer todos os i-nodes do disco serem invalidos */
+	union fs_block antigobloco0;
+	union fs_block antigoinodeblock;
+	union fs_block bloco_inodes;
+	
+	/* faz leitura do antigo bloco 0 */
+	disk_read(0,antigobloco0.data);
+	
+	/* percorre todos os blocos de inodes */
+	for (i = 1; i < (antigobloco0.ninodeblocks+1) i++) {
+		/* faz leitura do bloco de inodes */
+		disk_read(i,bloco_inodes.data);
+		
+		/* percorre todos os inodos no bloco */
+		for (j = 0; j < INODES_PER_BLOCK; j++) {
+			/* faz o inode ser invalido */
+			bloco_inodes.inode[j].isvalid = 0;
+		}
+		
+		/* escreve o novo bloco de inodes */
+		disk_write(i,bloco_inodes.data);
+	}
+	
+	/* escreve o superbloco */
+	disk_write(0,novobloco0.data);
+	
 
-	return 0;
+	return 1;
 }
 
 /*
@@ -256,12 +320,15 @@ int fs_mount()
 		for(int j = 0; j < INODES_PER_BLOCK; j++)
 		{
 			//adiciona uma posição no mapa de inodos;
-			//inodemap.push_back(0);
+			inodemap.push_back(0);
 			//se o inodo atual for válido:
 			if(i_block.inode[j].isvalid)
 			{	
-				//salva o bloco do inodo
-				//inodemap[i-1+j]=i;                 			<------ O Leal tinha me dito que criou esse mapa de inodos, não sei se é necessário, confira isso por favor!
+				/* salva o bloco do inodo */
+				inodemap[(i-1)*POINTERS_PER_INODE+j]=i;               
+				/* Deixei e arrumei! ^^	<------ O Leal tinha me dito que criou esse mapa de inodos, 
+				não sei se é necessário, confira isso por favor! */
+				
 				//percorre os blocos diretos:
 				for(int k=0; k<POINTERS_PER_INODE; k++)
 				{
@@ -307,18 +374,11 @@ int fs_create()
 		//retorna insucesso:
 		return 0;
 	}
-	int i,j,k;		  	//contadores
-	int inode_n=0;  	//contador de inodos percorridos 
-	fs_block s_block; 	//superbloco
-	fs_block i_block; 	//bloco de inodo
+	int i,j,k;		  //contadores
+	fs_block s_block; //superbloco
+	fs_block i_block; //bloco de inodo
 	//Lê o primeiro bloco (super bloco):
 	disk_read(0, s_block.data);
-	//Lê o primeiro bloco de inodos:
-	disk_read(1, i_block.data);
-	//Torna o inodo zero "ocupado" para que ele não seja criado devido ao problema com o código de erro:
-	i_block.inode[0].isvalid=true;
-	//Salva o bloco com o inodo zero "ocupado":
-	disk_write(1,i_block.data);
 	//percorrer os blocos de inodo:
 	for(i=1; i<(s_block.super.ninodeblocks+1); i++)
 	{
@@ -344,12 +404,10 @@ int fs_create()
 				//faz o bloco indireto para bloco inválido (esvazia):
 				i_block.inode[j].indirect=0;
 				//salva o inodo em disco:
-				disk_write(i,i_block.data);
+				disk_write(i+j,i_block.data);
 				//retorna sucesso, o número do inodo, pois encontrou um inodo vazio e o criou
-				return inode_n;
-			}
-			//incrementa o numero de inodos percorridos
-			inode_n++;
+				return i+j;
+			}	
 		}
 	}
 	//retorna insucesso pois percorreu todos os inodos de todos os blocos e não encontrou um inodo vazio e o criou
