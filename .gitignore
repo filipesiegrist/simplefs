@@ -2,4 +2,4 @@
 
 *.o
 
-# ... outros arquivos desnecessarios, alem do cpp
+watch*
